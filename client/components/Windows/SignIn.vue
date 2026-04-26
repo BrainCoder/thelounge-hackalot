@@ -78,7 +78,7 @@ export default defineComponent({
 		const username = ref(storage.get("user") || "");
 		const password = ref("");
 
-		const selfRegisterEnabled = computed(() => store.state.selfRegister);
+		const selfRegisterEnabled = ref(store.state.selfRegister);
 
 		const onAuthFailed = () => {
 			inFlight.value = false;

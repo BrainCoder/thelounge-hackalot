@@ -3,9 +3,13 @@ export type ConfigTheme = {
 	name: string;
 	themeColor: string | null;
 };
-type SharedConfigurationBase = {
+
+export type SharedPreAuthConfiguration = {
 	public: boolean;
 	selfRegister: boolean;
+};
+
+type SharedConfigurationBase = SharedPreAuthConfiguration & {
 	useHexIp: boolean;
 	prefetch: boolean;
 	fileUpload: boolean;

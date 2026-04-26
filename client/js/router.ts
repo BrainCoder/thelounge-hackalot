@@ -111,6 +111,17 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
+	// Wait for preAuthLoaded state to be true
+	// This ensures all pre auth configurations are available.
+	if (!store.state.preAuthLoaded) {
+		store.watch(
+			(state) => state.preAuthLoaded,
+			() => next()
+		);
+
+		return;
+	}
+
 	// If user is not yet signed in, wait for appLoaded state to change
 	// unless they are trying to open SignIn or SignUp
 	if (!store.state.appLoaded && to.name !== "SignIn" && to.name !== "SignUp") {

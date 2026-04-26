@@ -41,6 +41,7 @@ export type ClientSession = {
 };
 
 export type State = {
+	preAuthLoaded: boolean;
 	appLoaded: boolean;
 	activeChannel?: NetChan;
 	currentUserVisibleError: string | null;
@@ -85,6 +86,7 @@ export type State = {
 };
 
 const state = (): State => ({
+	preAuthLoaded: false,
 	appLoaded: false,
 	activeChannel: undefined,
 	currentUserVisibleError: null,
@@ -199,6 +201,7 @@ const getters: Getters = {
 };
 
 type Mutations = {
+	preAuthLoaded(state: State): void;
 	appLoaded(state: State): void;
 	activeChannel(state: State, netChan: State["activeChannel"]): void;
 	currentUserVisibleError(state: State, error: State["currentUserVisibleError"]): void;
@@ -236,6 +239,9 @@ type Mutations = {
 };
 
 const mutations: Mutations = {
+	preAuthLoaded(state) {
+		state.preAuthLoaded = true;
+	},
 	appLoaded(state) {
 		state.appLoaded = true;
 	},

@@ -35,11 +35,13 @@ import type {
 } from "../shared/types/socket-events";
 import {ChanType} from "../shared/types/chan";
 import {
+	SharedPreAuthConfiguration,
 	LockedSharedConfiguration,
 	SharedConfiguration,
 	ConfigNetDefaults,
 	LockedConfigNetDefaults,
 } from "../shared/types/config";
+import { selfRegister } from "../defaults/config";
 
 type ServerOptions = {
 	dev: boolean;
@@ -233,15 +235,14 @@ export default async function (
 			// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
 			socket.on("error", (err) => log.error(`io socket error: ${err}`));
 
+			sendPreAuthConfig(socket);
+
 			if (Config.values.public) {
 				performAuthentication.call(socket, {});
 			} else {
 				socket.on("auth:perform", performAuthentication);
 				socket.on("auth:register", performRegistration);
-				socket.emit("auth:start", {
-					serverHash,
-					selfRegister: Config.values.selfRegister,
-				});
+				socket.emit("auth:start", serverHash);
 			}
 		});
 
@@ -923,6 +924,14 @@ function getServerConfiguration(): ServerConfiguration {
 	return {...Config.values, ...{stylesheets: packages.getStylesheets()}};
 }
 
+function sendPreAuthConfig(socket: Socket) {
+	const preAuthConfig: SharedPreAuthConfiguration = {
+		public: Config.values.public,
+		selfRegister: Config.values.selfRegister
+	};
+	socket.emit("configuration:pre-auth", preAuthConfig);
+}
+
 function performAuthentication(this: Socket, data: AuthPerformData) {
 	if (!_.isPlainObject(data)) {
 		return;
@@ -963,7 +972,7 @@ function performAuthentication(this: Socket, data: AuthPerformData) {
 		// Configuration does not change during runtime of TL,
 		// and the client listens to this event only once
 		if (data && (!("hasConfig" in data) || !data.hasConfig)) {
-			socket.emit("configuration", getClientConfiguration());
+			socket.emit("configuration:init", getClientConfiguration());
 
 			socket.emit(
 				"push:issubscribed",

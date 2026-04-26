@@ -20,7 +20,7 @@ type EventHandler<T> = (data: T) => void;
 type NoPayloadEventHandler = EventHandler<void>;
 
 interface ServerToClientEvents {
-	"auth:start": (data: {serverHash: number; selfRegister: boolean}) => void;
+	"auth:start": (serverHash: number) => void;
 	"auth:failed": NoPayloadEventHandler;
 	"auth:success": NoPayloadEventHandler;
 	"auth:register:success": NoPayloadEventHandler;
@@ -37,7 +37,8 @@ interface ServerToClientEvents {
 
 	commands: EventHandler<string[]>;
 
-	configuration: EventHandler<SharedConfiguration | LockedSharedConfiguration>;
+	"configuration:pre-auth": EventHandler<SharedPreAuthConfiguration>;
+	"configuration:init": EventHandler<SharedConfiguration | LockedSharedConfiguration>;
 
 	"push:issubscribed": EventHandler<boolean>;
 	"push:unregister": NoPayloadEventHandler;

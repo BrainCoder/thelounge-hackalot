@@ -26,17 +26,17 @@ socket.on("auth:failed", async function () {
 	await showSignIn();
 });
 
-socket.on("auth:start", async function (data) {
+socket.on("auth:start", async function (serverHash) {
 	// If we reconnected and serverHash differs, that means the server restarted
 	// And we will reload the page to grab the latest version
-	if (lastServerHash && data.serverHash !== lastServerHash) {
+	if (lastServerHash && serverHash !== lastServerHash) {
 		return reloadPage("Server restarted, reloading…");
 	}
 
-	lastServerHash = data.serverHash;
+	lastServerHash = serverHash;
 
 	// Store selfRegister for use on sign-in page before full config is loaded
-	store.commit("selfRegister", data.selfRegister);
+	// store.commit("selfRegister", data.selfRegister);
 
 	const user = storage.get("user");
 	const token = storage.get("token");

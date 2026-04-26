@@ -22,9 +22,10 @@ module.exports = {
 	//
 	// When set to `true`, users can create their own accounts via a sign-up form
 	// on the login page. This only applies in private mode (when `public` is
-	// `false`). The server admin is responsible for rate limiting via reverse
-	// proxy (nginx, Apache, Cloudflare, fail2ban, etc.) since The Lounge does
-	// not implement built-in protection against registration abuse.
+	// `false`). The server admin is responsible for rate limiting via other means since
+	// The Lounge does not implement protection against registration abuse.
+	// The lounge does not implement email verification, or password recovery
+	// accounts created via self-registration are active immediately.
 	//
 	// This value is set to `false` by default.
 	selfRegister: false,
