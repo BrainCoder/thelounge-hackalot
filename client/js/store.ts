@@ -50,6 +50,7 @@ export type State = {
 	isConnected: boolean;
 	networks: ClientNetwork[];
 	selfRegister: boolean;
+	selfRegisterRequiresInvite: boolean;
 	// TODO: type
 	mentions: ClientMention[];
 	hasServiceWorker: boolean;
@@ -95,6 +96,7 @@ const state = (): State => ({
 	isConnected: false,
 	networks: [],
 	selfRegister: false,
+	selfRegisterRequiresInvite: true,
 	mentions: [],
 	hasServiceWorker: false,
 	pushNotificationState: "unsupported",
@@ -210,6 +212,7 @@ type Mutations = {
 	isConnected(state: State, payload: State["isConnected"]): void;
 	networks(state: State, networks: State["networks"]): void;
 	selfRegister(state: State, selfRegister: State["selfRegister"]): void;
+	selfRegisterRequiresInvite(state: State, selfRegisterRequiresInvite: boolean): void;
 	mentions(state: State, mentions: State["mentions"]): void;
 
 	removeNetwork(state: State, networkUuid: string): void;
@@ -265,6 +268,9 @@ const mutations: Mutations = {
 	},
 	selfRegister(state, selfRegister) {
 		state.selfRegister = selfRegister;
+	},
+	selfRegisterRequiresInvite(state, selfRegisterRequiresInvite) {
+		state.selfRegisterRequiresInvite = selfRegisterRequiresInvite;
 	},
 	mentions(state, mentions) {
 		state.mentions = mentions;

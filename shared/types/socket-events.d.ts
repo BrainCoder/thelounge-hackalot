@@ -119,6 +119,7 @@ type AuthRegisterData = {
 	user: string;
 	password: string;
 	password_confirm: string;
+	invite_code?: string;
 };
 
 interface ClientToServerEvents {

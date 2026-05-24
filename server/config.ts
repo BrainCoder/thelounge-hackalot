@@ -86,6 +86,7 @@ type StoragePolicy = {
 export type ConfigType = {
 	public: boolean;
 	selfRegister: boolean;
+	selfRegisterRequiresInvite: boolean;
 	host: string | undefined;
 	port: number;
 	bind: string | undefined;
@@ -139,6 +140,10 @@ class Config {
 
 	getFileUploadPath() {
 		return path.join(this.#homePath, "uploads");
+	}
+
+	getInvitePath() {
+		return path.join(this.#homePath, "invites.json");
 	}
 
 	getUsersPath() {

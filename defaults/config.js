@@ -30,6 +30,15 @@ module.exports = {
 	// This value is set to `false` by default.
 	selfRegister: false,
 
+	// ### `selfRegisterRequiresInvite`
+	//
+	// When set to `true`, users can only create their own accounts if they have an invite code. 
+	// This only applies if `selfRegister` is `true`. The server admin can generate invite codes 
+	// via the CLI, and can set a maximum number of uses per code.
+	//
+	// This value is set to `true` by default.
+	selfRegisterRequiresInvite: true,
+
 	// ### `host`
 	//
 	// IP address or hostname for the web server to listen to. For example, set it

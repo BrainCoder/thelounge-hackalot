@@ -35,9 +35,6 @@ socket.on("auth:start", async function (serverHash) {
 
 	lastServerHash = serverHash;
 
-	// Store selfRegister for use on sign-in page before full config is loaded
-	// store.commit("selfRegister", data.selfRegister);
-
 	const user = storage.get("user");
 	const token = storage.get("token");
 	const doFastAuth = user && token;

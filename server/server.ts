@@ -11,6 +11,7 @@ import net from "net";
 import log from "./log";
 import Client from "./client";
 import ClientManager from "./clientManager";
+import InviteManager from "./inviteManager";
 import Uploader from "./plugins/uploader";
 import Helper from "./helper";
 import Config, {ConfigType} from "./config";
@@ -41,7 +42,6 @@ import {
 	ConfigNetDefaults,
 	LockedConfigNetDefaults,
 } from "../shared/types/config";
-import { selfRegister } from "../defaults/config";
 
 type ServerOptions = {
 	dev: boolean;
@@ -67,6 +67,7 @@ export type Server = ioServer<
 const serverHash = Math.floor(Date.now() * Math.random());
 
 let manager: ClientManager | null = null;
+let inviteManager: InviteManager | null = null;
 
 export default async function (
 	options: ServerOptions = {
@@ -247,6 +248,7 @@ export default async function (
 		});
 
 		manager = new ClientManager();
+		inviteManager = new InviteManager();
 		packages.loadPackages();
 
 		const defaultTheme = themes.getByName(Config.values.theme);
@@ -269,9 +271,13 @@ export default async function (
 			} else if (!manager) {
 				log.error("Could not start identd server, ClientManager is undefined");
 				process.exit(1);
+			} else if (!inviteManager) {
+				log.error("Could not load invites, InviteManager is undefined");
+				process.exit(1);
 			}
 
 			manager.init(identHandler, sockets);
+			inviteManager.init();
 		});
 
 		// Handle ctrl+c and kill gracefully
@@ -877,6 +883,7 @@ function getClientConfiguration(): SharedConfiguration | LockedSharedConfigurati
 		defaultTheme: Config.values.theme,
 		public: Config.values.public,
 		selfRegister: Config.values.selfRegister,
+		selfRegisterRequiresInvite: Config.values.selfRegisterRequiresInvite,
 		useHexIp: Config.values.useHexIp,
 		prefetch: Config.values.prefetch,
 		fileUploadMaxFileSize: Uploader ? Uploader.getMaxFileSize() : undefined, // TODO can't be undefined?
@@ -927,7 +934,8 @@ function getServerConfiguration(): ServerConfiguration {
 function sendPreAuthConfig(socket: Socket) {
 	const preAuthConfig: SharedPreAuthConfiguration = {
 		public: Config.values.public,
-		selfRegister: Config.values.selfRegister
+		selfRegister: Config.values.selfRegister,
+		selfRegisterRequiresInvite: Config.values.selfRegisterRequiresInvite
 	};
 	socket.emit("configuration:pre-auth", preAuthConfig);
 }
@@ -1140,6 +1148,19 @@ function performRegistration(this: Socket, data: AuthRegisterData) {
 	if (manager!.findClient(cleanUsername)) {
 		socket.emit("auth:register:failed", {error: "Username already exists."});
 		return;
+	}
+
+	// Check if invite code is required and valid
+	if (Config.values.selfRegisterRequiresInvite) {
+		if (typeof data.invite_code !== "string" || !data.invite_code) {
+			socket.emit("auth:register:failed", {error: "Invite code is required."});
+			return;
+		}
+
+		if (!inviteManager!.useInvite(data.invite_code)) {
+			socket.emit("auth:register:failed", {error: "Invalid invite code."});
+			return;
+		}		
 	}
 
 	// Create the user

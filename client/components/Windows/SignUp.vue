@@ -62,6 +62,21 @@
 				</RevealPassword>
 			</div>
 
+			<label v-if="selfRegisterRequiresInvite" for="signup-invitecode">Invite code</label>
+			<input
+				v-if="selfRegisterRequiresInvite"
+				id="signup-invitecode"
+				v-model.trim="inviteCode"
+				class="input"
+				type="text"
+				name="invitecode"
+				autocapitalize="none"
+				autocorrect="off"
+				autocomplete="off"
+				autofocus
+				required
+			/>
+
 			<div v-if="errorShown" class="error">{{ errorMessage }}</div>
 			<div v-if="successShown" class="success">
 				Registration successful! You can now
@@ -83,6 +98,8 @@ import socket from "../../js/socket";
 import RevealPassword from "../RevealPassword.vue";
 import {defineComponent, onBeforeUnmount, onMounted, ref} from "vue";
 import {useRouter} from "vue-router";
+import {useStore} from "../../js/store";
+
 
 export default defineComponent({
 	name: "SignUp",
@@ -90,6 +107,7 @@ export default defineComponent({
 		RevealPassword,
 	},
 	setup() {
+		const store = useStore();
 		const inFlight = ref(false);
 		const errorShown = ref(false);
 		const successShown = ref(false);
@@ -98,6 +116,9 @@ export default defineComponent({
 		const username = ref("");
 		const password = ref("");
 		const passwordConfirm = ref("");
+		const inviteCode = ref("");
+
+		const selfRegisterRequiresInvite = ref(store.state.selfRegisterRequiresInvite);
 
 		const onRegisterSuccess = () => {
 			inFlight.value = false;
@@ -132,6 +153,7 @@ export default defineComponent({
 				user: username.value,
 				password: password.value,
 				password_confirm: passwordConfirm.value,
+				invite_code: inviteCode.value
 			};
 
 			socket.emit("auth:register", values);
@@ -149,12 +171,14 @@ export default defineComponent({
 
 		return {
 			inFlight,
+			selfRegisterRequiresInvite,
 			errorShown,
 			successShown,
 			errorMessage,
 			username,
 			password,
 			passwordConfirm,
+			inviteCode,
 			onSubmit,
 		};
 	},

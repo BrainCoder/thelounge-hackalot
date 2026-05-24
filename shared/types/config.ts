@@ -7,6 +7,7 @@ export type ConfigTheme = {
 export type SharedPreAuthConfiguration = {
 	public: boolean;
 	selfRegister: boolean;
+	selfRegisterRequiresInvite: boolean;
 };
 
 type SharedConfigurationBase = SharedPreAuthConfiguration & {

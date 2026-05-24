@@ -4,6 +4,7 @@ import {store} from "../store";
 
 socket.once("configuration:pre-auth", function (data) {
 	store.commit("selfRegister", data.selfRegister);
+	store.commit("selfRegisterRequiresInvite", data.selfRegisterRequiresInvite);
 	store.commit("preAuthLoaded");
 });
 
