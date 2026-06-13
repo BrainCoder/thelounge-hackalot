@@ -2,6 +2,7 @@ import constants from "./constants";
 
 import {createRouter, createWebHashHistory} from "vue-router";
 import SignIn from "../components/Windows/SignIn.vue";
+import SignUp from "../components/Windows/SignUp.vue";
 import Connect from "../components/Windows/Connect.vue";
 import Settings from "../components/Windows/Settings.vue";
 import Help from "../components/Windows/Help.vue";
@@ -26,6 +27,20 @@ const router = createRouter({
 			component: SignIn,
 			beforeEnter(to, from, next) {
 				// Prevent navigating to sign-in when already signed in
+				if (store.state.appLoaded) {
+					next(false);
+					return;
+				}
+
+				next();
+			},
+		},
+		{
+			name: "SignUp",
+			path: "/sign-up",
+			component: SignUp,
+			beforeEnter(to, from, next) {
+				// Prevent navigating to sign-up when already signed in
 				if (store.state.appLoaded) {
 					next(false);
 					return;
@@ -96,9 +111,20 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
+	// Wait for preAuthLoaded state to be true
+	// This ensures all pre auth configurations are available.
+	if (!store.state.preAuthLoaded) {
+		store.watch(
+			(state) => state.preAuthLoaded,
+			() => next()
+		);
+
+		return;
+	}
+
 	// If user is not yet signed in, wait for appLoaded state to change
-	// unless they are trying to open SignIn (which can be triggered in auth.js)
-	if (!store.state.appLoaded && to.name !== "SignIn") {
+	// unless they are trying to open SignIn or SignUp
+	if (!store.state.appLoaded && to.name !== "SignIn" && to.name !== "SignUp") {
 		store.watch(
 			(state) => state.appLoaded,
 			() => next()

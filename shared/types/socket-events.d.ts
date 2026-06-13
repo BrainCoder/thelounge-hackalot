@@ -23,6 +23,8 @@ interface ServerToClientEvents {
 	"auth:start": (serverHash: number) => void;
 	"auth:failed": NoPayloadEventHandler;
 	"auth:success": NoPayloadEventHandler;
+	"auth:register:success": NoPayloadEventHandler;
+	"auth:register:failed": EventHandler<{error: string}>;
 
 	"upload:auth": (token: string) => void;
 
@@ -35,7 +37,8 @@ interface ServerToClientEvents {
 
 	commands: EventHandler<string[]>;
 
-	configuration: EventHandler<SharedConfiguration | LockedSharedConfiguration>;
+	"configuration:pre-auth": EventHandler<SharedPreAuthConfiguration>;
+	"configuration:init": EventHandler<SharedConfiguration | LockedSharedConfiguration>;
 
 	"push:issubscribed": EventHandler<boolean>;
 	"push:unregister": NoPayloadEventHandler;
@@ -112,8 +115,16 @@ type AuthPerformData =
 			hasConfig: boolean;
 	  };
 
+type AuthRegisterData = {
+	user: string;
+	password: string;
+	password_confirm: string;
+	invite_code?: string;
+};
+
 interface ClientToServerEvents {
 	"auth:perform": EventHandler<AuthPerformData>;
+	"auth:register": EventHandler<AuthRegisterData>;
 
 	changelog: NoPayloadEventHandler;
 

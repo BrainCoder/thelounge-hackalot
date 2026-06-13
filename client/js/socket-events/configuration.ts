@@ -2,7 +2,13 @@ import socket from "../socket";
 import upload from "../upload";
 import {store} from "../store";
 
-socket.once("configuration", function (data) {
+socket.once("configuration:pre-auth", function (data) {
+	store.commit("selfRegister", data.selfRegister);
+	store.commit("selfRegisterRequiresInvite", data.selfRegisterRequiresInvite);
+	store.commit("preAuthLoaded");
+});
+
+socket.once("configuration:init", function (data) {
 	store.commit("serverConfiguration", data);
 
 	// 'theme' setting depends on serverConfiguration.themes so

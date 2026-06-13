@@ -11,6 +11,7 @@ import net from "net";
 import log from "./log";
 import Client from "./client";
 import ClientManager from "./clientManager";
+import InviteManager from "./inviteManager";
 import Uploader from "./plugins/uploader";
 import Helper from "./helper";
 import Config, {ConfigType} from "./config";
@@ -31,9 +32,11 @@ import type {
 	InterServerEvents,
 	SocketData,
 	AuthPerformData,
+	AuthRegisterData,
 } from "../shared/types/socket-events";
 import {ChanType} from "../shared/types/chan";
 import {
+	SharedPreAuthConfiguration,
 	LockedSharedConfiguration,
 	SharedConfiguration,
 	ConfigNetDefaults,
@@ -64,6 +67,7 @@ export type Server = ioServer<
 const serverHash = Math.floor(Date.now() * Math.random());
 
 let manager: ClientManager | null = null;
+let inviteManager: InviteManager | null = null;
 
 export default async function (
 	options: ServerOptions = {
@@ -232,15 +236,19 @@ export default async function (
 			// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
 			socket.on("error", (err) => log.error(`io socket error: ${err}`));
 
+			sendPreAuthConfig(socket);
+
 			if (Config.values.public) {
 				performAuthentication.call(socket, {});
 			} else {
 				socket.on("auth:perform", performAuthentication);
+				socket.on("auth:register", performRegistration);
 				socket.emit("auth:start", serverHash);
 			}
 		});
 
 		manager = new ClientManager();
+		inviteManager = new InviteManager();
 		packages.loadPackages();
 
 		const defaultTheme = themes.getByName(Config.values.theme);
@@ -263,9 +271,13 @@ export default async function (
 			} else if (!manager) {
 				log.error("Could not start identd server, ClientManager is undefined");
 				process.exit(1);
+			} else if (!inviteManager) {
+				log.error("Could not load invites, InviteManager is undefined");
+				process.exit(1);
 			}
 
 			manager.init(identHandler, sockets);
+			inviteManager.init();
 		});
 
 		// Handle ctrl+c and kill gracefully
@@ -870,6 +882,8 @@ function getClientConfiguration(): SharedConfiguration | LockedSharedConfigurati
 		themes: themes.getAll(),
 		defaultTheme: Config.values.theme,
 		public: Config.values.public,
+		selfRegister: Config.values.selfRegister,
+		selfRegisterRequiresInvite: Config.values.selfRegisterRequiresInvite,
 		useHexIp: Config.values.useHexIp,
 		prefetch: Config.values.prefetch,
 		fileUploadMaxFileSize: Uploader ? Uploader.getMaxFileSize() : undefined, // TODO can't be undefined?
@@ -917,6 +931,15 @@ function getServerConfiguration(): ServerConfiguration {
 	return {...Config.values, ...{stylesheets: packages.getStylesheets()}};
 }
 
+function sendPreAuthConfig(socket: Socket) {
+	const preAuthConfig: SharedPreAuthConfiguration = {
+		public: Config.values.public,
+		selfRegister: Config.values.selfRegister,
+		selfRegisterRequiresInvite: Config.values.selfRegisterRequiresInvite,
+	};
+	socket.emit("configuration:pre-auth", preAuthConfig);
+}
+
 function performAuthentication(this: Socket, data: AuthPerformData) {
 	if (!_.isPlainObject(data)) {
 		return;
@@ -957,7 +980,7 @@ function performAuthentication(this: Socket, data: AuthPerformData) {
 		// Configuration does not change during runtime of TL,
 		// and the client listens to this event only once
 		if (data && (!("hasConfig" in data) || !data.hasConfig)) {
-			socket.emit("configuration", getClientConfiguration());
+			socket.emit("configuration:init", getClientConfiguration());
 
 			socket.emit(
 				"push:issubscribed",
@@ -1064,6 +1087,103 @@ function performAuthentication(this: Socket, data: AuthPerformData) {
 		// Perform password checking
 		Auth.auth(manager, client, data.user, data.password, authCallback);
 	});
+}
+
+function performRegistration(this: Socket, data: AuthRegisterData) {
+	const socket = this;
+
+	// Self-registration must be enabled
+	if (!Config.values.selfRegister) {
+		socket.emit("auth:register:failed", {error: "Registration is disabled."});
+		return;
+	}
+
+	// Public mode doesn't need registration
+	if (Config.values.public) {
+		socket.emit("auth:register:failed", {
+			error: "Registration is not available in public mode.",
+		});
+		return;
+	}
+
+	// Validate input
+	if (!_.isPlainObject(data)) {
+		socket.emit("auth:register:failed", {error: "Invalid request."});
+		return;
+	}
+
+	const {user, password, password_confirm} = data;
+
+	if (typeof user !== "string" || !user) {
+		socket.emit("auth:register:failed", {error: "Username is required."});
+		return;
+	}
+
+	if (typeof password !== "string" || !password) {
+		socket.emit("auth:register:failed", {error: "Password is required."});
+		return;
+	}
+
+	if (password !== password_confirm) {
+		socket.emit("auth:register:failed", {error: "Passwords do not match."});
+		return;
+	}
+
+	if (password.length < 8) {
+		socket.emit("auth:register:failed", {error: "Password must be at least 8 characters."});
+		return;
+	}
+
+	// Validate username (must be safe)
+	const cleanUsername = user.toLowerCase();
+
+	if (!/^[a-z0-9_-]+$/.test(cleanUsername)) {
+		socket.emit("auth:register:failed", {
+			error: "Username can only contain letters, numbers, dashes and underscores.",
+		});
+		return;
+	}
+
+	// Check if user already exists
+	if (manager!.findClient(cleanUsername)) {
+		socket.emit("auth:register:failed", {error: "Username already exists."});
+		return;
+	}
+
+	// Check if invite code is required and valid
+	if (Config.values.selfRegisterRequiresInvite) {
+		if (typeof data.invite_code !== "string" || !data.invite_code) {
+			socket.emit("auth:register:failed", {error: "Invite code is required."});
+			return;
+		}
+
+		if (!inviteManager!.useInvite(data.invite_code)) {
+			socket.emit("auth:register:failed", {error: "Invalid invite code."});
+			return;
+		}
+	}
+
+	// Create the user
+	const hashedPassword = Helper.password.hash(password);
+
+	try {
+		const success = manager!.addUser(cleanUsername, hashedPassword, true);
+
+		if (!success) {
+			socket.emit("auth:register:failed", {error: "Failed to create user."});
+			return;
+		}
+	} catch (e: any) {
+		log.error(`Registration failed for user ${colors.bold(cleanUsername)}: ${e.message}`);
+		socket.emit("auth:register:failed", {error: "Failed to create user."});
+		return;
+	}
+
+	log.info(
+		`User ${colors.bold(cleanUsername)} registered from ${colors.bold(getClientIp(socket))}`
+	);
+
+	socket.emit("auth:register:success");
 }
 
 function reverseDnsLookup(ip: string, callback: (hostname: string) => void) {

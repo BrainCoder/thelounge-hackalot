@@ -41,6 +41,7 @@ export type ClientSession = {
 };
 
 export type State = {
+	preAuthLoaded: boolean;
 	appLoaded: boolean;
 	activeChannel?: NetChan;
 	currentUserVisibleError: string | null;
@@ -48,6 +49,8 @@ export type State = {
 	isAutoCompleting: boolean;
 	isConnected: boolean;
 	networks: ClientNetwork[];
+	selfRegister: boolean;
+	selfRegisterRequiresInvite: boolean;
 	// TODO: type
 	mentions: ClientMention[];
 	hasServiceWorker: boolean;
@@ -84,6 +87,7 @@ export type State = {
 };
 
 const state = (): State => ({
+	preAuthLoaded: false,
 	appLoaded: false,
 	activeChannel: undefined,
 	currentUserVisibleError: null,
@@ -91,6 +95,8 @@ const state = (): State => ({
 	isAutoCompleting: false,
 	isConnected: false,
 	networks: [],
+	selfRegister: false,
+	selfRegisterRequiresInvite: true,
 	mentions: [],
 	hasServiceWorker: false,
 	pushNotificationState: "unsupported",
@@ -197,6 +203,7 @@ const getters: Getters = {
 };
 
 type Mutations = {
+	preAuthLoaded(state: State): void;
 	appLoaded(state: State): void;
 	activeChannel(state: State, netChan: State["activeChannel"]): void;
 	currentUserVisibleError(state: State, error: State["currentUserVisibleError"]): void;
@@ -204,6 +211,8 @@ type Mutations = {
 	isAutoCompleting(state: State, isAutoCompleting: State["isAutoCompleting"]): void;
 	isConnected(state: State, payload: State["isConnected"]): void;
 	networks(state: State, networks: State["networks"]): void;
+	selfRegister(state: State, selfRegister: State["selfRegister"]): void;
+	selfRegisterRequiresInvite(state: State, selfRegisterRequiresInvite: boolean): void;
 	mentions(state: State, mentions: State["mentions"]): void;
 
 	removeNetwork(state: State, networkUuid: string): void;
@@ -233,6 +242,9 @@ type Mutations = {
 };
 
 const mutations: Mutations = {
+	preAuthLoaded(state) {
+		state.preAuthLoaded = true;
+	},
 	appLoaded(state) {
 		state.appLoaded = true;
 	},
@@ -253,6 +265,12 @@ const mutations: Mutations = {
 	},
 	networks(state, networks) {
 		state.networks = networks;
+	},
+	selfRegister(state, selfRegister) {
+		state.selfRegister = selfRegister;
+	},
+	selfRegisterRequiresInvite(state, selfRegisterRequiresInvite) {
+		state.selfRegisterRequiresInvite = selfRegisterRequiresInvite;
 	},
 	mentions(state, mentions) {
 		state.mentions = mentions;

@@ -18,6 +18,27 @@ module.exports = {
 	// This value is set to `false` by default.
 	public: false,
 
+	// ### `selfRegister`
+	//
+	// When set to `true`, users can create their own accounts via a sign-up form
+	// on the login page. This only applies in private mode (when `public` is
+	// `false`). The server admin is responsible for rate limiting via other means since
+	// The Lounge does not implement protection against registration abuse.
+	// The lounge does not implement email verification, or password recovery
+	// accounts created via self-registration are active immediately.
+	//
+	// This value is set to `false` by default.
+	selfRegister: false,
+
+	// ### `selfRegisterRequiresInvite`
+	//
+	// When set to `true`, users can only create their own accounts if they have an invite code.
+	// This only applies if `selfRegister` is `true`. The server admin can generate invite codes
+	// via the CLI, and can set a maximum number of uses per code.
+	//
+	// This value is set to `true` by default.
+	selfRegisterRequiresInvite: true,
+
 	// ### `host`
 	//
 	// IP address or hostname for the web server to listen to. For example, set it
