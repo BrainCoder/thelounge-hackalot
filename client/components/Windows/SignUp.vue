@@ -100,7 +100,6 @@ import {defineComponent, onBeforeUnmount, onMounted, ref} from "vue";
 import {useRouter} from "vue-router";
 import {useStore} from "../../js/store";
 
-
 export default defineComponent({
 	name: "SignUp",
 	components: {
@@ -153,7 +152,7 @@ export default defineComponent({
 				user: username.value,
 				password: password.value,
 				password_confirm: passwordConfirm.value,
-				invite_code: inviteCode.value
+				invite_code: inviteCode.value,
 			};
 
 			socket.emit("auth:register", values);

@@ -935,7 +935,7 @@ function sendPreAuthConfig(socket: Socket) {
 	const preAuthConfig: SharedPreAuthConfiguration = {
 		public: Config.values.public,
 		selfRegister: Config.values.selfRegister,
-		selfRegisterRequiresInvite: Config.values.selfRegisterRequiresInvite
+		selfRegisterRequiresInvite: Config.values.selfRegisterRequiresInvite,
 	};
 	socket.emit("configuration:pre-auth", preAuthConfig);
 }
@@ -1160,7 +1160,7 @@ function performRegistration(this: Socket, data: AuthRegisterData) {
 		if (!inviteManager!.useInvite(data.invite_code)) {
 			socket.emit("auth:register:failed", {error: "Invalid invite code."});
 			return;
-		}		
+		}
 	}
 
 	// Create the user

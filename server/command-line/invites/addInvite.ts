@@ -10,7 +10,10 @@ program
 	.description("Add an invite code that can be used to create new accounts")
 	.on("--help", Utils.extraHelp)
 	.argument("[code]", "the invite code, will be randomly generated if not specified")
-	.argument("[uses]", "the amount of times the invite can be used, defaults to 1, 'unlimited' for no limit")
+	.argument(
+		"[uses]",
+		"the amount of times the invite can be used, defaults to 1, 'unlimited' for no limit"
+	)
 	.action(function (code, uses) {
 		if (!fs.existsSync(Config.getInvitePath())) {
 			log.error(`${Config.getInvitePath()} does not exist.`);
@@ -22,12 +25,12 @@ program
 		const manager = new InviteManager();
 
 		if (!code) {
-			code = '';
-			let charset: string = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+			code = "";
+			const charset: string = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
-    		for (let i = 0; i < 8; i++) {
+			for (let i = 0; i < 8; i++) {
 				code += charset.charAt(Math.floor(Math.random() * charset.length));
-    		}
+			}
 		} else {
 			code = code.trim();
 		}
@@ -38,12 +41,13 @@ program
 			uses = -1;
 		} else {
 			uses = parseInt(uses);
+
 			if (isNaN(uses) || uses < 1) {
 				log.error("Uses must be a positive integer or 'unlimited'.");
 				return;
 			}
 		}
-		
+
 		manager.addInvite(code, uses);
 
 		log.info(`Added invite code ${colors.bold(code)}.`);

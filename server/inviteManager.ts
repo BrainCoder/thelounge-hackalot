@@ -1,21 +1,13 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
-import path from "path";
 import fs from "fs";
-import os from "os";
 import _ from "lodash";
-import colors from "chalk";
-import {SearchOptions} from "ldapjs";
 
 import log from "./log";
-import Helper from "./helper";
-import Utils from "./command-line/utils";
 import Config from "./config";
-import storage from "./plugins/storage";
 
 export type Invite = {
 	code: string;
 	uses: number;
-}
+};
 
 class InviteManager {
 	invites: Invite[];
@@ -27,9 +19,10 @@ class InviteManager {
 	init() {
 		this.loadInvites();
 	}
-	
+
 	loadInvites() {
 		const invitePath = Config.getInvitePath();
+
 		if (!fs.existsSync(invitePath)) {
 			log.warn(`${invitePath} does not exist, creating it.`);
 			fs.writeFileSync(invitePath, JSON.stringify(this.invites, null, "\t"), {
@@ -47,10 +40,10 @@ class InviteManager {
 	}
 
 	addInvite(code: string, uses: number | null) {
-		let invite: Invite = {
+		const invite: Invite = {
 			code,
-			uses: uses || 1
-		}
+			uses: uses || 1,
+		};
 
 		this.invites.push(invite);
 
@@ -58,8 +51,7 @@ class InviteManager {
 	}
 
 	useInvite(code: string) {
-
-		const invite = this.invites.find(i => i.code === code);
+		const invite = this.invites.find((i) => i.code === code);
 
 		if (!invite) {
 			return false;
@@ -69,9 +61,9 @@ class InviteManager {
 			invite.uses--;
 
 			if (invite.uses <= 0) {
-				this.invites = this.invites.filter(i => i.code !== code);
+				this.invites = this.invites.filter((i) => i.code !== code);
 			}
-		}		
+		}
 
 		this.storeInvites();
 		return true;
@@ -79,6 +71,7 @@ class InviteManager {
 
 	storeInvites() {
 		const invitePath = Config.getInvitePath();
+
 		try {
 			const tmpPath = invitePath + ".tmp";
 			fs.writeFileSync(tmpPath, JSON.stringify(this.invites, null, "\t"), {
